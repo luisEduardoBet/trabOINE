@@ -95,9 +95,14 @@ while run:
         exit_button.draw()
 
     elif part == 1: 
+        pygame.font.init()
+        label = pygame.font.SysFont("dejavusansmono", int(HEIGHT * 0.05), bold=True)
+        label = label.render("Selecione a fase desejada", True, "white")
+        screen.blit(label, (WIDTH/2  - label.get_width()/2, HEIGHT*0.15  - label.get_height()))
         for i, _j in niveis: 
             i.draw()
 
+    
 
     pygame.display.flip()
 
