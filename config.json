@@ -1,7 +1,7 @@
 {
-  "resolucao": 1,
-  "volume": 1,
-  "fonte": 12,
+  "resolucao": 0,
+  "volume": 6,
+  "fonte": 9,
   "dicas": true,
   "hud": true
 }
