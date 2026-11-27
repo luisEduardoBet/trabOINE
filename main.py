@@ -98,12 +98,69 @@ TESTAR_FASES_EM_DESENVOLVIMENTO = False
 #              - "NOT" e "FIO" têm só 1 entrada: ["NOT", entrada]
 #              - "!" na frente trava a porta (o aluno não pode trocar): ["!OR", 0, 1]
 #  "opcoes":   portas que aparecem no "Substituir Por" (padrão: AND, OR, NOT, FIO).
+#  "tabelas":  (opcional) tabelas-verdade mostradas na dica, ex.: ("AND", "OR"). Padrão: AND, OR, NOT.
+#  "rodape":   (opcional) as 2 linhas de texto no rodapé da dica.
 # Uma válvula abre quando a saída ("Gate") do circuito dela é 1.
 # O jogador vence se a água chega na banheira e nenhum veneno chega.
 OPCOES_PADRAO = ["AND", "OR", "NOT", "FIO"]
 
 NIVEIS = [
-    {   # ----------------------------- FASE 1 -----------------------------
+    {   # ----------------------------- FASE 1 (introdução: NOT) -----------------------------
+        "tempo": 90,
+        "dica": "Clique na placa com raio de cada válvula para abrir o circuito dela. A válvula abre "
+                "quando o Gate fica VERDE (saída 1). Clique na porta para trocá-la: a porta NÃO (NOT) "
+                "inverte o sinal (0 vira 1, 1 vira 0) e o FIO só repassa o sinal. A água precisa "
+                "abrir e o veneno precisa ficar fechado.",
+        "tabelas": ("NOT", "FIO"),
+        "rodape": ["NÃO (NOT): inverte o sinal. A entrada 0 vira 1 e a entrada 1 vira 0.",
+                   "FIO: a saída é igual à entrada (só passa o sinal adiante)."],
+        "opcoes": ["FIO", "NOT"],
+        "agua": [(150, 190), (150, 400), (1080, 400), (1080, 550)],
+        "venenos": [[(760, 175), (760, 400)]],
+        "valvulas": [
+            {"nome": "Água", "pos": (400, 400), "caixa": (400, 490), "objetivo": 1,
+             "circuito": ["FIO", 0]},
+            {"nome": "Veneno", "pos": (760, 270), "caixa": (680, 270), "objetivo": 0,
+             "circuito": ["NOT", 0]},
+        ],
+    },
+    {   # ----------------------------- FASE 2 (introdução: OR) -----------------------------
+        "tempo": 90,
+        "dica": "Agora você conhece a porta OU (OR): a saída é 1 quando pelo menos uma das entradas "
+                "é 1. Na válvula da água a saída precisa virar 1; na do veneno ela precisa ficar 0. "
+                "Use 'Substituir Por' e observe como o Gate muda.",
+        "tabelas": ("OR", "FIO"),
+        "rodape": ["OU (OR): a saída é 1 se pelo menos uma entrada for 1.",
+                   "FIO com 2 entradas usa só a primeira; a segunda fica cinza (ignorada)."],
+        "opcoes": ["OR", "FIO"],
+        "agua": [(150, 190), (150, 330), (560, 330), (560, 470), (1080, 470), (1080, 550)],
+        "venenos": [[(420, 175), (420, 330)]],
+        "valvulas": [
+            {"nome": "Água", "pos": (270, 330), "caixa": (270, 420), "objetivo": 1,
+             "circuito": ["FIO", 0, 1]},
+            {"nome": "Veneno", "pos": (420, 250), "caixa": (340, 250), "objetivo": 0,
+             "circuito": ["OR", 0, 1]},
+        ],
+    },
+    {   # ----------------------------- FASE 3 (introdução: AND) -----------------------------
+        "tempo": 90,
+        "dica": "Chegou a porta E (AND): a saída só é 1 quando as DUAS entradas são 1. Compare com a "
+                "OU (OR), que precisa de apenas uma entrada em 1. Escolha a porta certa para abrir "
+                "a água e manter o veneno fechado.",
+        "tabelas": ("AND", "OR"),
+        "rodape": ["E (AND): a saída só é 1 se as DUAS entradas forem 1.",
+                   "OU (OR): basta uma entrada ser 1. Compare as duas tabelas!"],
+        "opcoes": ["AND", "OR"],
+        "agua": [(150, 190), (150, 330), (560, 330), (560, 470), (1080, 470), (1080, 550)],
+        "venenos": [[(800, 175), (800, 470)]],
+        "valvulas": [
+            {"nome": "Água", "pos": (270, 330), "caixa": (270, 420), "objetivo": 1,
+             "circuito": ["AND", 1, 0]},
+            {"nome": "Veneno", "pos": (800, 320), "caixa": (720, 320), "objetivo": 0,
+             "circuito": ["OR", 1, 0]},
+        ],
+    },
+    {   # ----------------------------- FASE 4 (antiga Fase 1) -----------------------------
         "tempo": 60,
         "dica": "Clique nas placas com raio para abrir o circuito de cada válvula. "
                 "Clique numa porta para trocá-la. A válvula abre quando o Gate fica VERDE (saída 1).",
@@ -118,7 +175,7 @@ NIVEIS = [
              "circuito": ["AND", ["OR", 0, 0], 1]},
         ],
     },
-    {   # ----------------------------- FASE 2 -----------------------------
+    {   # ----------------------------- FASE 5 (antiga Fase 2) -----------------------------
         # Modelo em construção: mude "em_desenvolvimento" para False para jogar.
         "em_desenvolvimento": True,
         "tempo": 90,
@@ -786,14 +843,19 @@ class DialogoDica(Dialogo):
 
     def conteudo(self, s, mouse):
         f = self.fase
-        y = paragrafo(s, f.nivel["dica"], 16, "#222222", self.rect.centerx, self.rect.y + 98,
-                      self.rect.w - 100)
-        for tipo, x in (("AND", -300), ("OR", 0), ("NOT", 300)):
-            self.tabela(s, tipo, self.rect.centerx + x, y + 30)
-        texto(s, "FIO: a saída é igual à entrada (só passa o sinal adiante).", 15, "#333333",
-              centro=(self.rect.centerx, self.rect.bottom - 118))
-        texto(s, "NOT e FIO têm 1 entrada: AND e OR não cabem nos lugares de 1 entrada.", 15, "#333333",
-              centro=(self.rect.centerx, self.rect.bottom - 94))
+        cx = self.rect.centerx
+        y = paragrafo(s, f.nivel["dica"], 16, "#222222", cx, self.rect.y + 98, self.rect.w - 100)
+        # cada fase pode escolher quais tabelas-verdade mostrar (padrão: AND, OR e NOT)
+        tabelas = f.nivel.get("tabelas", ("AND", "OR", "NOT"))
+        deslocs = {1: (0,), 2: (-160, 160), 3: (-300, 0, 300)}[len(tabelas)]
+        for tipo, x in zip(tabelas, deslocs):
+            self.tabela(s, tipo, cx + x, y + 30)
+        # e também as duas linhas de rodapé
+        rodape = f.nivel.get("rodape", [
+            "FIO: a saída é igual à entrada (só passa o sinal adiante).",
+            "NOT e FIO têm 1 entrada: AND e OR não cabem nos lugares de 1 entrada."])
+        texto(s, rodape[0], 15, "#333333", centro=(cx, self.rect.bottom - 118))
+        texto(s, rodape[1], 15, "#333333", centro=(cx, self.rect.bottom - 94))
 
     def tabela(self, s, tipo, cx, y):
         texto(s, NOMES[tipo], 18, AZUL_ESCURO, centro=(cx, y))
